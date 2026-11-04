@@ -1,0 +1,255 @@
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+// -------------------------------------------------------------
+// ENUMS
+// -------------------------------------------------------------
+
+enum Role {
+  ADMIN
+}
+
+enum ClassType {
+  GROUP
+  INDIVIDUAL
+}
+
+enum ClassStatus {
+  SCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum AttendanceStatus {
+  PENDING
+  ATTENDED
+  ABSENT
+}
+
+// -------------------------------------------------------------
+// AUTHENTICATION & SETTINGS
+// -------------------------------------------------------------
+
+model User {
+  id           String   @id @default(uuid())
+  username     String?  @unique @db.VarChar(100)
+  email        String   @unique @db.VarChar(191)
+  passwordHash String   @db.VarChar(255)
+  name         String   @db.VarChar(100)
+  role         Role     @default(ADMIN)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  @@map("users")
+}
+
+model AcademySetting {
+  id          String   @id @default(uuid())
+  academyName String   @db.VarChar(150)
+  timezone    String   @default("Europe/Madrid") @db.VarChar(50)
+  currency    String   @default("EUR") @db.VarChar(10)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@map("academy_settings")
+}
+
+// -------------------------------------------------------------
+// CORE ENTITIES: STUDENTS, TEACHERS & COURSES
+// -------------------------------------------------------------
+
+model Student {
+  id        String    @id @default(uuid())
+  firstName String    @db.VarChar(100)
+  lastName  String    @db.VarChar(100)
+  email     String?   @db.VarChar(191)
+  phone     String?   @db.VarChar(30)
+  birthDate DateTime? @db.Date
+  notes     String?   @db.Text
+  isActive  Boolean   @default(true)
+  deletedAt DateTime?
+
+  createdAt DateTime  @default(now())
+  updatedAt DateTime  @updatedAt
+
+  courses       StudentCourse[]
+  subscriptions StudentSubscription[]
+  attendances   ClassStudent[]
+
+  @@index([isActive, deletedAt])
+  @@index([lastName, firstName])
+  @@map("students")
+}
+
+model Teacher {
+  id         String    @id @default(uuid())
+  firstName  String    @db.VarChar(100)
+  lastName   String    @db.VarChar(100)
+  email      String?   @db.VarChar(191)
+  phone      String?   @db.VarChar(30)
+  birthDate  DateTime? @db.Date
+  hourlyRate Decimal?  @db.Decimal(10, 2)
+  isActive   Boolean   @default(true)
+  deletedAt  DateTime?
+
+  createdAt  DateTime  @default(now())
+  updatedAt  DateTime  @updatedAt
+
+  courses       TeacherCourse[]
+  classSessions ClassTeacher[]
+
+  @@index([isActive, deletedAt])
+  @@index([lastName, firstName])
+  @@map("teachers")
+}
+
+model Course {
+  id          String   @id @default(uuid())
+  name        String   @unique @db.VarChar(100)
+  description String?  @db.Text
+  colorHex    String   @default("#3B82F6") @db.VarChar(7)
+  isActive    Boolean  @default(true)
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  students      StudentCourse[]
+  teachers      TeacherCourse[]
+  classSessions ClassSession[]
+
+  @@map("courses")
+}
+
+model StudentCourse {
+  studentId  String
+  courseId   String
+  assignedAt DateTime @default(now())
+
+  student Student @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  course  Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@id([studentId, courseId])
+  @@index([courseId])
+  @@map("student_courses")
+}
+
+model TeacherCourse {
+  teacherId  String
+  courseId   String
+  assignedAt DateTime @default(now())
+
+  teacher Teacher @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  course  Course  @relation(fields: [courseId], references: [id], onDelete: Cascade)
+
+  @@id([teacherId, courseId])
+  @@index([courseId])
+  @@map("teacher_courses")
+}
+
+// -------------------------------------------------------------
+// SUBSCRIPTIONS (INFORMATIONAL)
+// -------------------------------------------------------------
+
+model SubscriptionPlan {
+  id             String   @id @default(uuid())
+  name           String   @db.VarChar(100)
+  durationMonths Int
+  price          Decimal? @db.Decimal(10, 2)
+  isActive       Boolean  @default(true)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  studentSubscriptions StudentSubscription[]
+
+  @@map("subscription_plans")
+}
+
+model StudentSubscription {
+  id        String   @id @default(uuid())
+  studentId String
+  planId    String
+  startDate DateTime @db.Date
+  endDate   DateTime @db.Date
+  notes     String?  @db.Text
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  student Student          @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  plan    SubscriptionPlan @relation(fields: [planId], references: [id], onDelete: Restrict)
+
+  @@index([studentId, startDate, endDate])
+  @@index([planId])
+  @@map("student_subscriptions")
+}
+
+// -------------------------------------------------------------
+// CLASS SESSIONS, TEACHERS & ATTENDANCES
+// -------------------------------------------------------------
+
+model ClassSession {
+  id              String      @id @default(uuid())
+  courseId        String
+  type            ClassType   @default(GROUP)
+  status          ClassStatus @default(SCHEDULED)
+  startTime       DateTime
+  endTime         DateTime
+  durationMinutes Int
+  notes           String?     @db.Text
+  isIncomplete    Boolean     @default(false)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  course   Course         @relation(fields: [courseId], references: [id], onDelete: Restrict)
+  teachers ClassTeacher[]
+  students ClassStudent[]
+
+  @@index([startTime, endTime])
+  @@index([status])
+  @@index([courseId])
+  @@map("class_sessions")
+}
+
+model ClassTeacher {
+  id             String   @id @default(uuid())
+  classSessionId String
+  teacherId      String
+  minutesTaught  Int
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  classSession ClassSession @relation(fields: [classSessionId], references: [id], onDelete: Cascade)
+  teacher      Teacher      @relation(fields: [teacherId], references: [id], onDelete: Restrict)
+
+  @@unique([classSessionId, teacherId], name: "unique_class_teacher")
+  @@index([teacherId])
+  @@map("class_teachers")
+}
+
+model ClassStudent {
+  id               String           @id @default(uuid())
+  classSessionId   String
+  studentId        String
+  attendanceStatus AttendanceStatus @default(PENDING)
+  minutesAttended  Int              @default(0)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  classSession ClassSession @relation(fields: [classSessionId], references: [id], onDelete: Cascade)
+  student      Student      @relation(fields: [studentId], references: [id], onDelete: Restrict)
+
+  @@unique([classSessionId, studentId], name: "unique_class_student")
+  @@index([studentId, attendanceStatus])
+  @@map("class_students")
+}
+

@@ -1,0 +1,53 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --foreground-rgb: 15, 23, 42;
+  --background-start-rgb: 248, 250, 252;
+  --background-end-rgb: 255, 255, 255;
+}
+
+body {
+  color: rgb(var(--foreground-rgb));
+  background-color: #f8fafc;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* FullCalendar Modern Tweaks */
+.fc {
+  --fc-border-color: #e2e8f0;
+  --fc-button-text-color: #1e293b;
+  --fc-button-bg-color: #ffffff;
+  --fc-button-border-color: #cbd5e1;
+  --fc-button-hover-bg-color: #f1f5f9;
+  --fc-button-hover-border-color: #94a3b8;
+  --fc-button-active-bg-color: #2563eb;
+  --fc-button-active-border-color: #1d4ed8;
+  --fc-today-bg-color: #eff6ff;
+  font-size: 0.875rem;
+}
+
+.fc .fc-toolbar-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: #0f172a;
+}
+
+.fc .fc-button-primary:not(:disabled).fc-button-active, 
+.fc .fc-button-primary:not(:disabled):active {
+  color: #ffffff;
+}
+
+.fc .fc-col-header-cell-cushion {
+  padding-top: 0.5rem;
+  padding-bottom: 0.5rem;
+  font-weight: 600;
+  color: #475569;
+}
+
+.fc-theme-standard td, .fc-theme-standard th {
+  border-color: #e2e8f0;
+}
+
