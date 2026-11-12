@@ -3,6 +3,10 @@ import { IsBoolean, IsHexColor, IsOptional, IsString, MaxLength } from 'class-va
 export class UpdateCourseDto {
   @IsString()
   @IsOptional()
+  id?: string;
+
+  @IsString()
+  @IsOptional()
   @MaxLength(100)
   name?: string;
 

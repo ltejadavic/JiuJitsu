@@ -13,12 +13,12 @@ async function bootstrap() {
   // Global prefix for all REST endpoints
   app.setGlobalPrefix('api/v1');
 
-  // Input validation and transformation
+  // Input validation and transformation (whitelist strips unknown fields cleanly)
   app.useGlobalPipes(
     new ValidationPipe({
       whitelist: true,
       transform: true,
-      forbidNonWhitelisted: true,
+      forbidNonWhitelisted: false,
       transformOptions: {
         enableImplicitConversion: true,
       },

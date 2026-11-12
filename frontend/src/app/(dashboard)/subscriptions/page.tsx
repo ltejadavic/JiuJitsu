@@ -44,8 +44,8 @@ export default function SubscriptionsPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: any) =>
-      apiClient(`/subscription-plans/${data.id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    mutationFn: ({ id, ...payload }: any) =>
+      apiClient(`/subscription-plans/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['subscription-plans'] });
       closeModal();

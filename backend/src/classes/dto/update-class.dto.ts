@@ -16,6 +16,10 @@ import { TeacherAssignmentDto } from './create-class.dto';
 export class UpdateClassDto {
   @IsString()
   @IsOptional()
+  id?: string;
+
+  @IsString()
+  @IsOptional()
   courseId?: string;
 
   @IsEnum(ClassType)

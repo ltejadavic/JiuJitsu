@@ -57,8 +57,8 @@ export default function CoursesPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: { id: string; name: string; description?: string; colorHex: string; isActive?: boolean }) =>
-      apiClient(`/courses/${data.id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    mutationFn: ({ id, ...payload }: { id: string; name: string; description?: string; colorHex: string; isActive?: boolean }) =>
+      apiClient(`/courses/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['courses'] });
       closeModal();

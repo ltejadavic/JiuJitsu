@@ -115,8 +115,8 @@ export default function StudentsPage() {
   });
 
   const updateStudentMutation = useMutation({
-    mutationFn: (data: any) =>
-      apiClient(`/students/${data.id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    mutationFn: ({ id, ...payload }: any) =>
+      apiClient(`/students/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['students'] });
       closeStudentModal();

@@ -202,8 +202,13 @@ export function ClassFormModal({
   });
 
   const updateMutation = useMutation({
-    mutationFn: (payload: any) =>
-      apiClient(`/classes/${classToEdit.id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
+    mutationFn: ({ id, ...payload }: any) => {
+      const classId = id || classToEdit?.id;
+      if (!classId) {
+        throw new Error('Class ID is required to update class.');
+      }
+      return apiClient(`/classes/${classId}`, { method: 'PATCH', body: JSON.stringify(payload) });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['classes'] });
       onClose();
@@ -293,12 +298,15 @@ export function ClassFormModal({
       startTime: startTimeIso,
       durationMinutes,
       notes: notes.trim() || undefined,
-      teacherAssignments,
+      teacherAssignments: teacherAssignments.map((a) => ({
+        teacherId: a.teacherId,
+        minutesTaught: a.minutesTaught || durationMinutes,
+      })),
       studentIds: selectedStudentIds,
     };
 
     if (classToEdit) {
-      updateMutation.mutate(payload);
+      updateMutation.mutate({ id: classToEdit.id, ...payload });
     } else {
       createMutation.mutate(payload);
     }

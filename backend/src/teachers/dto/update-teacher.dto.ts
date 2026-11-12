@@ -13,6 +13,10 @@ import {
 export class UpdateTeacherDto {
   @IsString()
   @IsOptional()
+  id?: string;
+
+  @IsString()
+  @IsOptional()
   @MaxLength(100)
   firstName?: string;
 

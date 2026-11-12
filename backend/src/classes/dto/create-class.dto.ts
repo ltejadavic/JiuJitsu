@@ -15,6 +15,10 @@ import { ClassType } from '@prisma/client';
 
 export class TeacherAssignmentDto {
   @IsString()
+  @IsOptional()
+  id?: string;
+
+  @IsString()
   @IsNotEmpty()
   teacherId: string;
 

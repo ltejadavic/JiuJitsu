@@ -75,8 +75,8 @@ export default function TeachersPage() {
   });
 
   const updateMutation = useMutation({
-    mutationFn: (data: any) =>
-      apiClient(`/teachers/${data.id}`, { method: 'PATCH', body: JSON.stringify(data) }),
+    mutationFn: ({ id, ...payload }: any) =>
+      apiClient(`/teachers/${id}`, { method: 'PATCH', body: JSON.stringify(payload) }),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['teachers'] });
       closeModal();

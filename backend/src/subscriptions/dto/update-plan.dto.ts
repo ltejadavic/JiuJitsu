@@ -3,6 +3,10 @@ import { IsBoolean, IsInt, IsNumber, IsOptional, IsString, MaxLength, Min } from
 export class UpdatePlanDto {
   @IsString()
   @IsOptional()
+  id?: string;
+
+  @IsString()
+  @IsOptional()
   @MaxLength(100)
   name?: string;
 
