@@ -4,7 +4,7 @@ import React, { useState } from 'react';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { apiClient } from '@/lib/api-client';
 import { Modal } from '@/components/ui/Modal';
-import { Plus, BookOpen, Edit2, Check, Loader2, Sparkles } from 'lucide-react';
+import { Plus, BookOpen, Edit2, Trash2, Check, Loader2, Sparkles } from 'lucide-react';
 
 interface Course {
   id: string;
@@ -65,6 +65,25 @@ export default function CoursesPage() {
     },
     onError: (err: any) => setFormError(err.message),
   });
+
+  const deleteMutation = useMutation({
+    mutationFn: (id: string) => apiClient(`/courses/${id}`, { method: 'DELETE' }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['courses'] });
+    },
+    onError: (err: any) => alert(`Error deleting course: ${err.message}`),
+  });
+
+  const handleDelete = (course: Course) => {
+    const hasHistory = course._count.classSessions > 0;
+    const confirmMessage = hasHistory
+      ? `Course "${course.name}" has ${course._count.classSessions} class session(s) associated with it. Deleting it will deactivate it to protect class logs and analytics. Are you sure?`
+      : `Are you sure you want to delete course "${course.name}"?`;
+
+    if (confirm(confirmMessage)) {
+      deleteMutation.mutate(course.id);
+    }
+  };
 
   const openCreateModal = () => {
     setEditingCourse(null);
@@ -157,15 +176,31 @@ export default function CoursesPage() {
                     className="h-3.5 w-3.5 rounded-full ring-2 ring-white shadow-sm"
                     style={{ backgroundColor: course.colorHex }}
                   />
-                  <h3 className="font-bold text-slate-900">{course.name}</h3>
+                  <div>
+                    <h3 className="font-bold text-slate-900">{course.name}</h3>
+                    {!course.isActive && (
+                      <span className="inline-block rounded-full bg-amber-50 px-2 py-0.5 text-[10px] font-semibold text-amber-700 border border-amber-200">
+                        Inactive
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <button
-                  onClick={() => openEditModal(course)}
-                  className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700"
-                  title="Edit course"
-                >
-                  <Edit2 className="h-4 w-4" />
-                </button>
+                <div className="flex items-center gap-1">
+                  <button
+                    onClick={() => openEditModal(course)}
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-slate-100 hover:text-slate-700 transition"
+                    title="Edit course"
+                  >
+                    <Edit2 className="h-4 w-4" />
+                  </button>
+                  <button
+                    onClick={() => handleDelete(course)}
+                    className="rounded-lg p-1.5 text-slate-400 hover:bg-red-50 hover:text-red-600 transition"
+                    title="Delete course"
+                  >
+                    <Trash2 className="h-4 w-4" />
+                  </button>
+                </div>
               </div>
 
               <p className="mt-2 text-xs leading-relaxed text-slate-500 line-clamp-2">
@@ -260,22 +295,38 @@ export default function CoursesPage() {
             </div>
           </div>
 
-          <div className="mt-6 flex justify-end gap-3 pt-2">
-            <button
-              type="button"
-              onClick={closeModal}
-              className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              disabled={isSubmitting}
-              className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-70"
-            >
-              {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
-              {editingCourse ? 'Save Changes' : 'Create Course'}
-            </button>
+          <div className="mt-6 flex items-center justify-between gap-3 pt-2">
+            {editingCourse ? (
+              <button
+                type="button"
+                onClick={() => {
+                  const course = editingCourse;
+                  closeModal();
+                  handleDelete(course);
+                }}
+                className="inline-flex items-center gap-1.5 rounded-xl border border-red-200 bg-red-50 px-3 py-2 text-xs font-semibold text-red-600 hover:bg-red-100 transition"
+              >
+                <Trash2 className="h-3.5 w-3.5" />
+                Delete Course
+              </button>
+            ) : <div />}
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={closeModal}
+                className="rounded-xl border border-slate-200 px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isSubmitting}
+                className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-4 py-2 text-sm font-semibold text-white shadow-sm hover:bg-blue-700 disabled:opacity-70"
+              >
+                {isSubmitting && <Loader2 className="h-4 w-4 animate-spin" />}
+                {editingCourse ? 'Save Changes' : 'Create Course'}
+              </button>
+            </div>
           </div>
         </form>
       </Modal>
