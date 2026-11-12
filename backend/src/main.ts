@@ -27,13 +27,38 @@ async function bootstrap() {
 
   // Enable CORS for frontend requests
   const corsOriginsEnv = process.env.CORS_ORIGINS;
-  let originConfig: boolean | string | string[] = true;
-  if (corsOriginsEnv && corsOriginsEnv.trim() !== '' && corsOriginsEnv !== '*') {
-    originConfig = corsOriginsEnv.split(',').map((o) => o.trim());
-  }
+  const configuredOrigins = corsOriginsEnv
+    ? corsOriginsEnv.split(',').map((o) => o.trim().replace(/\/+$/, ''))
+    : [];
 
   app.enableCors({
-    origin: originConfig,
+    origin: (origin, callback) => {
+      // Allow requests with no origin (like mobile apps, curl, or server-to-server)
+      if (!origin) {
+        return callback(null, true);
+      }
+
+      // Always allow local development
+      if (origin.startsWith('http://localhost') || origin.startsWith('http://127.0.0.1')) {
+        return callback(null, true);
+      }
+
+      // Allow all Vercel deployment domains (production and deployment previews)
+      if (origin.endsWith('.vercel.app')) {
+        return callback(null, true);
+      }
+
+      // Allow configured origins or wildcard
+      if (
+        configuredOrigins.length === 0 ||
+        configuredOrigins.includes('*') ||
+        configuredOrigins.includes(origin)
+      ) {
+        return callback(null, true);
+      }
+
+      return callback(null, false);
+    },
     credentials: true,
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization', 'Accept'],
